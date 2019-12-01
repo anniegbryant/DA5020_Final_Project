@@ -17,7 +17,7 @@ Multiple groups in the lab are analyzing the resulting dataset with different go
 ### Project Data
 For in-depth explanation of the data scraping and cleaning process, please refer to the Project_Writeup.pdf included in this project. In brief, all cleaned data pertaining to the 414 proteins included in this study are included in the CSV Files folder of this project. All data can be re-created using the Project_Code.R script, and the R environment data can be loaded with Project_Data.RData. The Project_Writeup.pdf file was created by knitting Project_Writeup.RMD to PDF using RStudio.
 
-In total, I have compiled twelve distinct data tables that encompass protein function, cellular location, and protein pathways for the 414 proteins in our study. More specifically, I have amassed the following distinct counts of values across the respective tables:  
+In total, I have compiled eleven distinct data tables that encompass protein function, cellular location, and protein pathways for the 414 proteins in our study. More specifically, I have amassed the following distinct counts of values across the respective tables:  
 
 * Biological Process, Keywords: 81
 * Biological Process, Full: 2825
