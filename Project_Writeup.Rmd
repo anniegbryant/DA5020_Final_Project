@@ -1,15 +1,12 @@
 ---
-output:
-  pdf_document: default
 title: |
   | \vspace{7cm} \LARGE DA5020 Final Project
 author: "Annie Bryant"
-date: "`r Sys.Date()`"
+date: '`r Sys.Date()`'
+output:
+  pdf_document: default
+header-includes: \usepackage{setspace}\doublespacing
 urlcolor: blue
-pdf_document:
-  toc: true
-header-includes:
-    - \usepackage{setspace}\doublespacing
 ---
 
 \newpage
