@@ -1,9 +1,18 @@
 ---
-title: "Project Writeup"
+output:
+  pdf_document: default
+title: |
+  | \vspace{7cm} \LARGE DA5020 Final Project
 author: "Annie Bryant"
-date: "`r format(Sys.time(),  %B '%d, %Y')`"
-output: html_document
+date: "`r Sys.Date()`"
+urlcolor: blue
+pdf_document:
+  toc: true
+header-includes:
+    - \usepackage{setspace}\doublespacing
 ---
+
+\newpage
 
 ```{r setup, include=FALSE}
 rm(list=ls())
@@ -16,48 +25,173 @@ library(stringr)
 library(rvest)
 ```
 
+# GitHub Project Information
+All of the files referenced here are located in this GitHub repository: https://github.com/anniegbryant/DA5020_Final_Project. This includes the R source code, Rmd file used to generate this report, R environment data, and .csv input and output.
 
 # Project Overview
 
-For my final project, I chose to curate a database of protein-specific information acquired from the UniProt Knowledge Base (UniProtKB, https://www.uniprot.org/uniprot/?query=reviewed:yes). I wanted the R script to read in a list of UniProt IDs from a CSV file and output R and SQL dataframes containing relevant information corresponding to each UniProt entry, including molecular function, biological process, Reactome pathway, and disease involvement. This involves querying the UniProt webpage for each ID using rvest, cleaning the data within R using dplyr, and organizing the data into a SQL database with normalized tables using sqldf.  
+For my final project, I chose to curate a database of protein-specific information acquired from the UniProt Knowledge Base^1^. I wanted the R script to read in a list of UniProt IDs from a CSV file and output R and SQL dataframes containing relevant information corresponding to each UniProt entry, including molecular function, biological process, Reactome pathway, and disease involvement. This involves querying the UniProt webpage for each ID using rvest^2^, cleaning the data within R using dplyr^3^, and organizing the data into a SQL database with normalized tables using sqldf^4^.  
 
-My motivation for this project comes from my work as a Research Technician in the lab of Dr. Brad Hyman at Massachusetts General Hospital. Researchers in the lab recently completed a long-term study collecting plasma samples from cognitively impaired patients, from which protein expression was measured for 414 proteins over time. I joined this project over the summer and have been involved in analyzing the resulting dataset, both statistically and visually, with the goal of identifying biomarkers that either predict or correlate with cognitive decline. I realized it would be tremendously helpful to have functional information about each protein in addition to the expression data, in order to potentially identify overarching trends in protein networks.Hopefully, the  SQL database created in this project will provide further insight into the relationship between protein expression change and cognitive decline going forward.  
+My motivation for this project comes from my work as a Research Technician in the lab of Dr. Brad Hyman at Massachusetts General Hospital. I joined a project over the summer in which plasma samples were collected from cognitively impaired patients at two or three time points over several years to measure protein expression. Specifically, expression levels for 414 different proteins were measured using a highly-sensitive transcription-based amplification technology from Olink Proteomics, yielding normalized relative protein expression values for each plasma sample. In total, for 414 proteins and 123 patients with plasma from multiple time points (2 or 3), this data amounts to 145,314 data points. One predominant goal of this project is to identify biomarkers that either predict or correlate with cognitive decline, since both protein expression and cognitive status were measured at each visit for each patient.
 
-# Background
+Multiple groups in the lab are analyzing this resulting dataset with other various goals, focusing on different subsets of the 414 proteins assayed. My group is particularly interested in the dynamics of cerebral vasculature with AD pathogenesis and progression^5^. As such, we have focused on a smaller subset of 21 vasculature-related proteins. I came across the R package Time-course Gene Set Analysis (TcGSA) package which is designed to analyze longitudinal RNA-Seq data by grouping individual genes into gene sets, *a priori*, which are known to share common biological functions and/or expression patterns^6^. While I wasn't able to get this package to work with my protein data, it inspired me to approach our longitudinal protein expression data analysis from a similar perspective. 
 
-The project at MGH involves longitudinal measurement of protein expression in plasma obtained over several years from patients with varying severity of mild cognitive impairment (MCI) or Alzheimer’s Disease (AD). This particular study analyzed plasma samples collected at either two or three time points per patient, with approximately one year in between blood draws. Briefly, protein expression was measured in plasma samples using a highly-sensitive transcription-based amplification technology from Olink Proteomics, yielding normalized relative protein expression values for each plasma sample. In total, for 414 proteins and 123 subjects with plasma from multiple time points (2 or 3), this generated 145,314 unique data points.  
+I realized it would be tremendously helpful to have functional information about each protein in addition to the expression data, in order to potentially identify overarching trends in protein networks.Hopefully, the SQL database created in this project will provide further insight into the relationship between protein expression change and cognitive decline going forward.  
 
-Multiple groups in the lab are analyzing the resulting dataset with different goals, analyzing different subsets of the 414 total proteins assayed. My group is particularly interested in the interplay between cerebral vasculature changes and AD pathogenesis and progression. As such, we have been focusing on a smaller subset of 21 vasculature-related proteins. I came across the R package for Time-course Gene Set Analysis (TcGSA) which is designed to analyze longitundinal RNA-Seq data by grouping individual genes into gene sets *a priori* which are known to share common biological functions and/or expression patterns. While this package didn't work with the protein expression data in my hands, it inspired me to approach this longitudinal data analysis from a similar perspective.
+
+# About the UniProt Data Involved
+
+In this longitudinal study, expression levels were measured for 414 different proteins. One particularly useful collection of information I used comes from the **Gene Ontology**^7,8^, which is an online consortium integrating structural and functional information about genes and gene products from numerous sources. I used UniProt's Retrieve/ID Mapping tool to download the following information about each of these proteins:  
+
+
+* **Gene Ontology (GO) Biological Process**: Broader biological processes achieved via several molecular activities, from DNA repair to lipid transporter activity.
+* **Gene Ontology Cellular Component**: Intracellular component(s) in which a gene product executes a particular function -- for example, ribosome or Golgi apparatus.
+* **Gene Ontology Molecular Function**: Activities performed at the molecular level by one or more gene products, including transporter activity and Toll-like receptor binding.
+* **Tissue specificity**: Organ(s) or organ system(s) in which the protein is expressed throughout the body.
+* **Function overview**: Higher-level information about the general function(s) of the protein.
+* **KEGG ID**: ID linking the UniProt entry to the corrresponding entry in the Kyoto Encyclopedia of Genes and Genomes (KEGG)^9,10,11^
+
+
+To hone in on specific information I wanted, I also used rvest to scrape the following information about each protein:   
+
+* **Biological Process keyword**: One or two primary GO biological processes.
+* **Molecular Function keyword**: One or two primary GO molecular functions. 
+* **Associated diseases**: Any disease(s) associated with genetic variations in the protein.
+* **Subcellular location**: The location and the topology of the mature protein in the cell.
+* **Reactome Pathway**: The ID and description associated with a Reactome Pathway, an expansive collection of biological pathways and processes.^12^  
+
+
+
+# Method Selection
+
+I downloaded some data directly from the UniProt batch download tool, and any data I couldn't download in CSV format, I extracted via web scraping.  For the web scraping, I chose to use rvest over other scraping tools we covered this semester (e.g. import.io) since I wanted to access 414 different webpages programmatically, an application for which rvest is well-suited. By adding an 0.5s delay between webpage queries, I avoided bombarding the UniProt server without exponentially increasing the code runtime. I opted to load each UniProt webpage and read its HTML contents just once, and then apply helper functions to extract the desired information (e.g. GO keyword, subcellular location) from each page once loaded. Each helper function takes in a UniProt page upon which read_html() has been called, and extracts the pertinent information to save into a dataframe. 
+
+I prefer to work with the dataframes in dplyr before adding them to SQL data tables. Therefore, once all of the UniProt data was extracted via CSV download or web scrape, I used dplyr to clean the data. The biggest issue with the preliminary dataset was that many cells contained multiple values, separated by delimiters such as commas, periods, or semi-colon. I chose to split these values into separate rows, yielding two- or three-column dataframes, with the UniProt ID in one column and the data value(s) in the other column(s). This meant my dataframes were largely in long format, which I anticipate will be more conducive for my downstream analysis involving grouping proteins by function or pathway. Once the data was cleaned, I used sqldf to add the dataframes to the SQLite connection which can then be queried in RStudio with dbGetQuery() commands.
+
+# Issues Encountered  
+
+I went through several iterations of my R code. My first approach was to use self-contained functions to download the HTML contents of each UniProt page for each value I wanted to extract, instead of downloading the content once and passing in helper functions. For example, I originally wrote the following two functions that separately extracted the GO Keywords and Reactome Pathways from UniProt pages that were downloaded twice, which is redunant and takes far longer:
+
+```{r}
+# Extract GO Keywords
+extract_keywords <- function(id) {
+  #Sleep for 0.5s between requests to not overload Uniprot server
+  Sys.sleep(0.5)
+  
+  #Create temporary dataframe to store this page's data
+  page <- data.frame(X1="NA", X2="NA", Uniprot_ID=id)
+  
+  #Try the given URL and return NA if there is a 404 error
+  try(
+    page <- sprintf(uniprot_url, URLencode(id)) %>%
+      read_html() %>%
+      #Keywords are contained in the first databaseTable
+      html_node(".databaseTable") %>%
+      #Convert to table (dataframe)
+      html_table() %>%
+      #Add Uniprot ID
+      mutate(Uniprot_ID = id),
+    silent=TRUE
+  )
+  #Append to dataframe
+  all_keywords <- rbind(all_keywords, page)
+}
+
+# Extract Reactome Pathway
+extract_pathway <- function(id) {
+  #Sleep for 0.5s between requests to not overload Uniprot server
+  Sys.sleep(0.5)
+  
+  #Create temporary dataframe to store this page's data
+  path <- data.frame(Uniprot_ID=id, .="NA")
+  
+  try(
+    path <- sprintf(uniprot_url, URLencode(id)) %>%
+      read_html() %>%
+      html_nodes(".databaseTable :contains(ReactomeiR)") %>%
+      html_text() %>%
+      .[2] %>%
+      as.data.frame(.) %>%
+      mutate(Uniprot_ID=id),
+    silent=TRUE
+  )
+  rc_path <- rbind(rc_path, path)
+}
+```
+
+Once I realized this redundancy and instead wrote individual helper functions and one larger function to download the HTML content, it was easy to tweak the helper functions to get exactly the format of the content I wanted. It was also easier to download all the content in one go, and then once the data was downloaded and stored in dataframes, to clean and organize the data using dplyr afterward.
+
+
+# Summary of Data Collected
+
+In total, I have compiled eleven distinct data tables that encompass protein function, cellular location, and protein pathways for the 414 proteins in our study. More specifically, I have amassed the following distinct counts of values across the respective tables:  
+
+* Biological Process, Keywords: 81
+* Biological Process, Full: 2825
+* Cellular Compartment, Full: 335
+* Disease Associations: 200
+* Function overview: 1763
+* Molecular Function, Keywords: 67
+* Molecular Function, Full: 580
+* Subcellular Location: 41
+* Reactome Pathway: 583
+* Tissue Specificity: 638
+* KEGG IDs: 414
+
+# Future Implementations
+
+As described, the purpose for this project is to obtain more information about the proteins studied in the longitudinal Alzheimer's Disease plasma study so that we can examine trends among protein pathways and across functional domains. While I cannot share any of the actual data or analysis for this project due to confidentiality, I am excited about how these datasets will facilitate new discoveries for our project going forward. I have thus far only focused on acquiring and organizing the data, as per the project guidelines, but the next phase of project implementation will be to perform statistical analyses (e.g. T-Tests, Logistic Regression, PCA) with biological process and Reactome pathway as categorical variables.  
+
+
+# References
+
+1. UniProt Consortium. (2018). UniProt: a worldwide hub of protein knowledge. Nucleic acids research, 47(D1), D506-D515.
+2. Hadley Wickham (2019). rvest: Easily Harvest (Scrape) Web Pages. R package version 0.3.5. https://CRAN.R-project.org/package=rvest
+3. Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2018). dplyr: A Grammar of Data Manipulation. R package version 0.7.6. https://CRAN.R-project.org/package=dplyr
+4. G. Grothendieck (2017). sqldf: Manipulate R Data Frames Using SQL. R package version 0.4-11. https://CRAN.R-project.org/package=sqldf
+5. Bennett, R. E., Robbins, A. B., Hu, M., Cao, X., Betensky, R. A., Clark, T., ... & Hyman, B. T. (2018). Tau induces blood vessel abnormalities and angiogenesis-related gene expression in P301L transgenic mice and human Alzheimer’s disease. Proceedings of the National Academy of Sciences, 115(6), E1289-E1298.
+6. Hejblum BP, Skinner J, and Thiebaut R (2015) Time-Course Gene Set Analysis for Longitudinal Gene Expression Data. PLoS Comput Biol 11(6): e1004310.<doi:10.1371/journal.pcbi.1004310
+7. Ashburner et al. Gene ontology: tool for the unification of biology. Nat Genet. May 2000;25(1):25-9.
+8. The Gene Ontology Consortium. The Gene Ontology Resource: 20 years and still GOing strong. Nucleic Acids Res. Jan 2019;47(D1):D330-D338. 
+9. Kanehisa, M. and Goto, S.; KEGG: Kyoto Encyclopedia of Genes and Genomes. Nucleic Acids Res. 28, 27-30 (2000). 
+10. Kanehisa, M., Sato, Y., Furumichi, M., Morishima, K., and Tanabe, M.; New approach for understanding genome variations in KEGG. Nucleic Acids Res. 47, D590-D595 (2019).
+11. Kanehisa, M; Toward understanding the origin and evolution of cellular organisms. Protein Sci. (2019)
+12. Fabregat, A., Jupe, S., Matthews, L., Sidiropoulos, K., Gillespie, M., Garapati, P., ... & Milacic, M. (2017). The reactome pathway knowledgebase. Nucleic acids research, 46(D1), D649-D655.
+
+
+# Appendix: Methods and Figures
+
 
 # Methods
 
 I first explored UniProt's Retrieve/ID Mapping tool (https://www.uniprot.org/uploadlists/) to see what information I could download for a given list of UniProt IDs. The tool allows a user to enter a list of UniProt IDs or upload a file containing IDs, after which the user can select which column(s) they wish to download corresponding to each UniProt ID entry.
 
-```{r, echo=FALSE, out.height = "600px"}
+```{r, echo=FALSE, out.height = "450px"}
 knitr::include_graphics("Report_images/Download_page.png")
 ```
 
 &nbsp;
 
-I opted to download the tissue specificity, KEGG ID, GO Biological Processes, and GO Molecular Functions columns for each UniProt entry. This downloaded file is also available in this GitHub Repo as UniProt_download.csv.
-
+I opted to download the Gene Ontology (GO) Biological Process, GO Cellular Component, GO Molecular Function, Function overview, Reactome ID, and KEGG ID. This downloaded file is available in the GitHub project as UniProt_download.csv.
 
 ```{r, warning=F, message=F, results='hide'}
 UP_df <- read.csv("UniProt_download.csv", stringsAsFactors = F)
 colnames(UP_df)[1] <- "UniProt_ID"
 ```
 
+
 Here is an excerpt of this dataset:
 
 ```{r, echo=F}
+
 knitr::kable(head(UP_df, n=5) %>%
   rowwise() %>%
   mutate_if(is.character, str_trunc, width = 15, ellipsis = ''), 
   format="latex", booktabs=T) %>%
   kable_styling(latex_options="scale_down")
+  
 ```
 
-&nbsp;
 
 I then normalized this dataset by breaking it up into several subsets, each in long format with one value per row and (potentially) multiple rows per UniProt ID.  
 
@@ -80,8 +214,6 @@ knitr::kable(head(Tissue_specificity, n=10) %>%
   kable_styling(latex_options="scale_down")
 ```
 
-&nbsp;
-
 I created a **Function_overview** tibble to store each sentence in the protein's general function overview as a separate row.
 
 ```{r}
@@ -100,25 +232,18 @@ kable(head(Function_overview, n=5), format="latex", booktabs=T) %>%
   kable_styling(latex_options="scale_down")
 ```
 
-&nbsp;
-
 Lastly, I created a table linking UniProt IDs with the corresponding KEGG ID so I can later extract information from the Kyoto Encyclopedia of Genes and Genomes (KEGG, https://www.genome.jp/kegg/).
 ```{r}
 # Table for KEGG IDs
 UniProt_KEGG <- UP_df %>%  
   select(UniProt_ID, KEGG_ID)  
 ```
-
 ```{r, echo=F}
+
 kable(head(UniProt_KEGG, n=5), format="latex", booktabs=T)
 ```
 
 &nbsp;
-&nbsp;
-
-
-The **Gene Ontology** (GO, http://geneontology.org) is an online consortium integrating structural and functional information about genes and gene products from numerous sources. The GO is organized into three categories: **Biological Process (BP), Cellular Component (CC)**, and **Molecular Function (MF)**. BPs refer to broader processes achieved through several molecular activities, from DNA repair to lipid transporter activity. Cellular Components refer to the intracellular component(s) in which a gene product executes a specific function -- for example, ribosome or Golgi apparatus. MFs refer to activities performed at the molecular level by one or more gene products, including transporter activity and Toll-like receptor binding.
-
 &nbsp;
 
 I created separate dataframes for the BP, CC, and MF. As with other dataframes, I split multiple values from one string into multiple rows per UniProt ID.
@@ -134,8 +259,8 @@ GO_BP_Full <- UP_df %>%
   separate(GO_BP, into=c("Biological_process", "GO_ID"), sep=" \\[") %>%  
   mutate(GO_ID = str_replace(GO_ID, "\\]", ""))
 ```
-
 ```{r, echo=F}
+
 kable(head(GO_BP_Full, n=5), format="latex", booktabs=T)
 ```
 
@@ -153,14 +278,13 @@ GO_CC_Full <- UP_df %>%
   separate(GO_CC, into=c("Cellular_component", "GO_ID"), sep=" \\[") %>%  
   mutate(GO_ID = str_replace(GO_ID, "\\]", ""))
 ```
-
 ```{r, echo=F}
+
 kable(head(GO_CC_Full, n=5), format="latex", booktabs=T)
 ```
 
 &nbsp;
 &nbsp;
-
 
 **Molecular Functions:**
 
@@ -174,9 +298,10 @@ GO_MF_Full <- UP_df %>%
   separate(GO_MF, into=c("Molecular_function", "GO_ID"), sep=" \\[") %>%  
   mutate(GO_ID = str_replace(GO_ID, "\\]", ""))
 ```
-
 ```{r, echo=F}
+
 kable(head(GO_MF_Full, n=5), format="latex", booktabs=T)
+
 ```
 
 &nbsp;
@@ -201,8 +326,6 @@ The UniProt page also includes any noted disease associations with the given pro
 knitr::include_graphics("Report_images/disease.png")
 ```
 
-&nbsp;
-
 My next step would thus be to scrape the Keywords, Subcellular Location, and any Disease Associations for each protein in the list. I loaded a CSV file containing the protein names and UniProt IDs included in the longitudinal study.
 
 ```{r, message=F}
@@ -214,17 +337,13 @@ proteins <- read.csv("Protein_UniProt_List.csv")
 UniProt_IDs <- as.matrix(proteins$Uniprot_ID)
 ```
 
-
-&nbsp;
-
 The base URL for any UniProt protein query is https://www.uniprot.org/uniprot/.
 ```{r}
 uniprot_url <- "https://www.uniprot.org/uniprot/%s"
 ```
 
-&nbsp;
-
 To reduce computation time and minimize queries sent to UniProt, I chose to load each webpage and read its contents just once, and then apply helper functions to extract the desired information from each page once loaded. Each helper function below takes in a UniProt page upon which read_html() has been called, and extracts the pertinent information to save into a dataframe.
+
 
 **GO Keywords**:
 ```{r}
@@ -278,7 +397,7 @@ extract_pathway <- function(page) {
     as.data.frame()
 }
 ```
-&nbsp;
+
 
 Initialize empty dataframes to append results from helper functions:
 ```{r}
@@ -288,8 +407,6 @@ keyword_df <- data.frame(X1=character(0), X2=character(0),
 disease_df <- location_df <- pathway_df <- data.frame(.=character(0), 
                                                       UniProt_ID=character(0))
 ```
-&nbsp;
-
 
 Extract_all is the function which will load a UniProt URL, read and parse the associated html content, and call each of the helper functions to extract all of the desired information.
 
@@ -330,15 +447,12 @@ extract_all <- function(id) {
   pathway_df <<- rbind(pathway_df, pathway)
 }
 ```
-&nbsp;
-
 
 I then apply extract_all to each row in the 414x1 matrix containing the UniProt IDs.
-```{r}
+```{r, message=F, warning=F, results='hide'}
 # Calling invisible() to suppress console output
 invisible(apply(UniProt_IDs, 1, extract_all))
 ```
-&nbsp;
 
 
 Once the data is collected in individual dataframes, I then cleaned them using dplyr. I first renamed the columns in location_df and disease_df.
@@ -349,7 +463,6 @@ colnames(location_df) <- c("Subcellular_location", "UniProt_ID")
 colnames(disease_df) <- c("Disease_association", "UniProt_ID")
 ```
 
-&nbsp;
 
 Then I reorganized the keywords dataframe into separate Biological Process and Molecular Function dataframes.
 
@@ -367,7 +480,6 @@ BP_MF <- keyword_df %>%
 
 To better organize rows with multiple values in one column, I split BP_MF into two dataframes, one for BP and one for MF.
 ```{r}
-
 # Create one dataframe for biological processes
 BP <- BP_MF %>%
   select(UniProt_ID, `Biological process`) %>%  
@@ -385,7 +497,6 @@ MF <- BP_MF %>%
   na.omit()
 
 ```
-&nbsp;
 
 The pathways dataframe contains multiple values in the Path column, all as one string. I split them by the "R-HSA-" delimiter and store distinct R-HSA pathway entries as separate rows.
 ```{r}
@@ -415,8 +526,6 @@ pathway_df <- pathway_df %>%
 
 colnames(pathway_df) <- c("Reactome_ID", "Pathway_Description", "UniProt_ID")
 ```
-
-&nbsp;
 
 
 Here are snippets of the cleaned web-scraped dataframes:
@@ -457,8 +566,6 @@ kable(head(pathway_df, n=5), format="latex", booktabs=T)
 &nbsp;
 
 Each of these cleaned dataframes is available in the GitHub project as a .csv file in the CSV Files folder.  
-
-&nbsp;
 
 
 Lastly, I used sqldf to add the dataframes to a SQL database.
@@ -502,10 +609,9 @@ dbWriteTable(conn = db, name = "Tissue_Specificity", value=Tissue_specificity,
 
 dbWriteTable(conn = db, name = "KEGG_IDs", value=UniProt_KEGG,   
              row.names=F, header=T, overwrite=T)
+
 ```
 
-
-&nbsp;
 
 To confirm the tables were successfully added to the SQL database, I can call dbListTables() on the database:
 
@@ -513,10 +619,9 @@ To confirm the tables were successfully added to the SQL database, I can call db
 dbListTables(db)
 ```
 
-
 # Results
 
-In total, I have compiled twelve distinct data tables that encompass protein function, cellular location, and protein pathways for the 414 proteins in our study. More specifically, I have amassed the following distinct counts of values across the respective tables:  
+In total, I have compiled eleven distinct data tables that encompass protein function, cellular location, and protein pathways for the 414 proteins in our study. More specifically, I have amassed the following distinct counts of values across the respective tables:  
 
 * Biological Process, Keywords: 81
 * Biological Process, Full: 2825
@@ -531,10 +636,7 @@ In total, I have compiled twelve distinct data tables that encompass protein fun
 * KEGG IDs: 414
 
 
-&nbsp;
-
 To demonstrate the efficacy of accessing data from the SQL database, I queried the most frequent values from some of the data tables.
-
 
 
 ## Biological Process Keywords:
@@ -622,7 +724,6 @@ kable(head(FO_Count, n=10), format="latex", booktabs=T) %>%
   kable_styling(latex_options="scale_down")
 ```
 
-
 ## Subcellular Location:
 
 ```{r}
@@ -637,7 +738,6 @@ LC_Count <- dbGetQuery(db, "SELECT Subcellular_location AS 'Subcellular Location
 kable(head(LC_Count, n=10), format="latex", booktabs=T)
 ```
 
-
 ## Cellular Compartment, Full:
 
 ```{r}
@@ -650,7 +750,6 @@ CC_Full_Count <- dbGetQuery(db, "SELECT Cellular_component, COUNT(*) as 'Count'
 ```{r, echo=F}
 kable(head(CC_Full_Count, n=10), format="latex", booktabs=T)
 ```
-
 
 
 ## Reactome Pathways:
@@ -670,60 +769,9 @@ kable(head(PT_Count, n=10), format="latex", booktabs=T) %>%
 ```
 
 
-# Discussion
-
-I went through several iterations of my R code. My first approach was to use self-contained functions to download the HTML contents of each UniProt page for each value I wanted to extract, instead of downloading the content once and passing in helper functions. For example, I originally wrote the following two functions that separately extracted the GO Keywords and Reactome Pathways from UniProt pages that were downloaded twice, which is redunant and takes far longer:
-
-```{r, eval=F}
-# Extract GO Keywords
-extract_keywords <- function(id) {
-  #Sleep for 0.5s between requests to not overload Uniprot server
-  Sys.sleep(0.5)
-  
-  #Create temporary dataframe to store this page's data
-  page <- data.frame(X1="NA", X2="NA", Uniprot_ID=id)
-  
-  #Try the given URL and return NA if there is a 404 error
-  try(
-    page <- sprintf(uniprot_url, URLencode(id)) %>%
-      read_html() %>%
-      #Keywords are contained in the first databaseTable
-      html_node(".databaseTable") %>%
-      #Convert to table (dataframe)
-      html_table() %>%
-      #Add Uniprot ID
-      mutate(Uniprot_ID = id),
-    silent=TRUE
-  )
-  #Append to dataframe
-  all_keywords <- rbind(all_keywords, page)
-}
-
-# Extract Reactome Pathway
-extract_pathway <- function(id) {
-  #Sleep for 0.5s between requests to not overload Uniprot server
-  Sys.sleep(0.5)
-  
-  #Create temporary dataframe to store this page's data
-  path <- data.frame(Uniprot_ID=id, .="NA")
-  
-  try(
-    path <- sprintf(uniprot_url, URLencode(id)) %>%
-      read_html() %>%
-      html_nodes(".databaseTable :contains(ReactomeiR)") %>%
-      html_text() %>%
-      .[2] %>%
-      as.data.frame(.) %>%
-      mutate(Uniprot_ID=id),
-    silent=TRUE
-  )
-  rc_path <- rbind(rc_path, path)
-}
-```
-
-Once I realized this redundancy and wrote individual helper functions and one larger function to download the HTML content, it was easy to tweak the heler functions to get exactly the format of the content I wanted. It was also easier to download all the content in one go, and then once the data was downloaded and stored in dataframes, to clean and organize the data using dplyr afterward.
 
 
-# Further Implementation
 
-As I described, the purpose for this project is to obtain more information about the proteins studied in the longitudinal Alzheimer's Disease plasma study so that we can examine trends among protein pathways and across functional domains. While I cannot share any of the actual data or analysis for this project due to confidentiality, I am excited about how these datasets will facilitate new discoveries for our project going forward. I have thus far only focused on acquiring and organizing the data, as per the project guidelines, but the next phase of project implementation will be to perform statistical analyses (e.g. T-Tests, Logistic Regression, PCA) with biological process and Reactome pathway as categorical variables.
+
+
+
