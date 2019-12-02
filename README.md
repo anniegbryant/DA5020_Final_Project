@@ -59,11 +59,11 @@ change and cognitive decline going forward.
 
 In this longitudinal study, expression levels were measured for 414
 different proteins. One particularly useful collection of information I
-used comes from the **Gene Ontology**(Ashburner et al. 2000, @GO2),
-which is an online consortium integrating structural and functional
-information about genes and gene products from numerous sources. I used
-UniProt’s Retrieve/ID Mapping tool to download the following information
-about each of these proteins:
+used comes from the **Gene Ontology**(Ashburner et al. 2000;
+The Gene Ontology Consortium 2019), which is an online consortium
+integrating structural and functional information about genes and gene
+products from numerous sources. I used UniProt’s Retrieve/ID Mapping
+tool to download the following information about each of these proteins:
 
 -   **Gene Ontology (GO) Biological Process**: Broader biological
     processes achieved via several molecular activities, from DNA repair
@@ -79,8 +79,8 @@ about each of these proteins:
 -   **Function overview**: Higher-level information about the general
     function(s) of the protein.
 -   **KEGG ID**: ID linking the UniProt entry to the corrresponding
-    entry in the Kyoto Encyclopedia of Genes and Genomes (KEGG)(Kanehisa
-    2000, @KEGG2, @KEGG3)
+    entry in the Kyoto Encyclopedia of Genes and Genomes, or KEGG
+    (Kanehisa 2000; Minoru Kanehisa et al. 2019; Minoru Kanehisa 2019).
 
 To hone in on specific information I wanted, I also used rvest to scrape
 the following information about each protein:
