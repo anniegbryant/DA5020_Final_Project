@@ -7,16 +7,16 @@ DA5020 Final Project
 ### Project Overview
 
 For my final project, I chose to curate a database of protein-specific
-information acquired from the UniProt Knowledge Base(“UniProt: A
+information acquired from the UniProt Knowledge Base (“UniProt: A
 Worldwide Hub of Protein Knowledge” 2019). I wanted the R script to read
 in a list of UniProt IDs from a CSV file and output R and SQL dataframes
 containing relevant information corresponding to each UniProt entry,
 including molecular function, biological process, Reactome pathway, and
 disease involvement. This involves querying the UniProt webpage for each
-ID using rvest(“Rvest: Easily Harvest (Scrape) Web Pages” 2019),
-cleaning the data within R using dplyr(“Dplyr: A Grammar of Data
+ID using rvest (“Rvest: Easily Harvest (Scrape) Web Pages” 2019),
+cleaning the data within R using dplyr (“Dplyr: A Grammar of Data
 Manipulation” 2019), and organizing the data into a SQL database with
-normalized tables using sqldf(“Sqldf: Manipulate R Data Frames Using
+normalized tables using sqldf (“Sqldf: Manipulate R Data Frames Using
 SQL” 2017).
 
 My motivation for this project comes from my work as a Research
@@ -38,12 +38,12 @@ patient.
 Multiple groups in the lab are analyzing this resulting dataset with
 other various goals, focusing on different subsets of the 414 proteins
 assayed. My group is particularly interested in the dynamics of cerebral
-vasculature with AD pathogenesis and progression(Bennett et al. 2018).
+vasculature with AD pathogenesis and progression (Bennett et al. 2018).
 As such, we have focused on a smaller subset of 21 vasculature-related
 proteins. I came across the R package Time-course Gene Set Analysis
 (TcGSA) package which is designed to analyze longitudinal RNA-Seq data
 by grouping individual genes into gene sets, *a priori*, which are known
-to share common biological functions and/or expression patterns(Hejblum,
+to share common biological functions and/or expression patterns (Hejblum,
 Skinner, and Thiébaut 2015). While I wasn’t able to get this package to
 work with my protein data, it inspired me to approach our longitudinal
 protein expression data analysis from a similar perspective.
@@ -59,7 +59,7 @@ change and cognitive decline going forward.
 
 In this longitudinal study, expression levels were measured for 414
 different proteins. One particularly useful collection of information I
-used comes from the **Gene Ontology**(Ashburner et al. 2000;
+used comes from the **Gene Ontology** (Ashburner et al. 2000;
 The Gene Ontology Consortium 2019), which is an online consortium
 integrating structural and functional information about genes and gene
 products from numerous sources. I used UniProt’s Retrieve/ID Mapping
@@ -79,7 +79,7 @@ tool to download the following information about each of these proteins:
 -   **Function overview**: Higher-level information about the general
     function(s) of the protein.
 -   **KEGG ID**: ID linking the UniProt entry to the corrresponding
-    entry in the Kyoto Encyclopedia of Genes and Genomes, or KEGG
+    entry in the Kyoto Encyclopedia of Genes and Genomes, or KEGG 
     (Kanehisa 2000; Minoru Kanehisa et al. 2019; Minoru Kanehisa 2019).
 
 To hone in on specific information I wanted, I also used rvest to scrape
@@ -95,7 +95,7 @@ the following information about each protein:
     mature protein in the cell.
 -   **Reactome Pathway**: The ID and description associated with a
     Reactome Pathway, an expansive collection of biological pathways and
-    processes.(Fabregat et al. 2018)
+    processes (Fabregat et al. 2018).
 
 ### Summary of Collected Project Data
 
