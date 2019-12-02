@@ -3,18 +3,18 @@
 
 ### Project Overview
 
-For my final project, I chose to curate a database of protein-specific information acquired from the UniProt Knowledge Base^1^. I wanted the R script to read in a list of UniProt IDs from a CSV file and output R and SQL dataframes containing relevant information corresponding to each UniProt entry, including molecular function, biological process, Reactome pathway, and disease involvement. This involves querying the UniProt webpage for each ID using rvest^2^, cleaning the data within R using dplyr^3^, and organizing the data into a SQL database with normalized tables using sqldf^4^.  
+For my final project, I chose to curate a database of protein-specific information acquired from the UniProt Knowledge Base[1]. I wanted the R script to read in a list of UniProt IDs from a CSV file and output R and SQL dataframes containing relevant information corresponding to each UniProt entry, including molecular function, biological process, Reactome pathway, and disease involvement. This involves querying the UniProt webpage for each ID using rvest[2], cleaning the data within R using dplyr[3], and organizing the data into a SQL database with normalized tables using sqldf[4].  
 
 My motivation for this project comes from my work as a Research Technician in the lab of Dr. Brad Hyman at Massachusetts General Hospital. I joined a project over the summer in which plasma samples were collected from cognitively impaired patients at two or three time points over several years to measure protein expression. Specifically, expression levels for 414 different proteins were measured using a highly-sensitive transcription-based amplification technology from Olink Proteomics, yielding normalized relative protein expression values for each plasma sample. In total, for 414 proteins and 123 patients with plasma from multiple time points (2 or 3), this data amounts to 145,314 data points. One predominant goal of this project is to identify biomarkers that either predict or correlate with cognitive decline, since both protein expression and cognitive status were measured at each visit for each patient.
 
-Multiple groups in the lab are analyzing this resulting dataset with other various goals, focusing on different subsets of the 414 proteins assayed. My group is particularly interested in the dynamics of cerebral vasculature with AD pathogenesis and progression^5^. As such, we have focused on a smaller subset of 21 vasculature-related proteins. I came across the R package Time-course Gene Set Analysis (TcGSA) package which is designed to analyze longitudinal RNA-Seq data by grouping individual genes into gene sets, *a priori*, which are known to share common biological functions and/or expression patterns^6^. While I wasn't able to get this package to work with my protein data, it inspired me to approach our longitudinal protein expression data analysis from a similar perspective. 
+Multiple groups in the lab are analyzing this resulting dataset with other various goals, focusing on different subsets of the 414 proteins assayed. My group is particularly interested in the dynamics of cerebral vasculature with AD pathogenesis and progression[5]. As such, we have focused on a smaller subset of 21 vasculature-related proteins. I came across the R package Time-course Gene Set Analysis (TcGSA) package which is designed to analyze longitudinal RNA-Seq data by grouping individual genes into gene sets, *a priori*, which are known to share common biological functions and/or expression patterns^6^. While I wasn't able to get this package to work with my protein data, it inspired me to approach our longitudinal protein expression data analysis from a similar perspective. 
 
 I realized it would be tremendously helpful to have functional information about each protein in addition to the expression data, in order to potentially identify overarching trends in protein networks.Hopefully, the SQL database created in this project will provide further insight into the relationship between protein expression change and cognitive decline going forward.  
 
 
 ### About the UniProt Data Involved
 
-In this longitudinal study, expression levels were measured for 414 different proteins. One particularly useful collection of information I used comes from the **Gene Ontology**^7,8^, which is an online consortium integrating structural and functional information about genes and gene products from numerous sources. I used UniProt's Retrieve/ID Mapping tool to download the following information about each of these proteins:  
+In this longitudinal study, expression levels were measured for 414 different proteins. One particularly useful collection of information I used comes from the **Gene Ontology**[7,8], which is an online consortium integrating structural and functional information about genes and gene products from numerous sources. I used UniProt's Retrieve/ID Mapping tool to download the following information about each of these proteins:  
 
 
 * **Gene Ontology (GO) Biological Process**: Broader biological processes achieved via several molecular activities, from DNA repair to lipid transporter activity.
@@ -22,7 +22,7 @@ In this longitudinal study, expression levels were measured for 414 different pr
 * **Gene Ontology Molecular Function**: Activities performed at the molecular level by one or more gene products, including transporter activity and Toll-like receptor binding.
 * **Tissue specificity**: Organ(s) or organ system(s) in which the protein is expressed throughout the body.
 * **Function overview**: Higher-level information about the general function(s) of the protein.
-* **KEGG ID**: ID linking the UniProt entry to the corrresponding entry in the Kyoto Encyclopedia of Genes and Genomes (KEGG)^9,10,11^
+* **KEGG ID**: ID linking the UniProt entry to the corrresponding entry in the Kyoto Encyclopedia of Genes and Genomes (KEGG)[9,10,11]
 
 
 To hone in on specific information I wanted, I also used rvest to scrape the following information about each protein:   
@@ -31,7 +31,7 @@ To hone in on specific information I wanted, I also used rvest to scrape the fol
 * **Molecular Function keyword**: One or two primary GO molecular functions. 
 * **Associated diseases**: Any disease(s) associated with genetic variations in the protein.
 * **Subcellular location**: The location and the topology of the mature protein in the cell.
-* **Reactome Pathway**: The ID and description associated with a Reactome Pathway, an expansive collection of biological pathways and processes.^12^  
+* **Reactome Pathway**: The ID and description associated with a Reactome Pathway, an expansive collection of biological pathways and processes.[12]  
 
 
 ### Summary of Collected Project Data
