@@ -44,8 +44,8 @@ proteins. I came across the R package Time-course Gene Set Analysis
 (TcGSA) package which is designed to analyze longitudinal RNA-Seq data
 by grouping individual genes into gene sets, *a priori*, which are known
 to share common biological functions and/or expression patterns (Hejblum,
-Skinner, and Thiébaut 2015). While I wasn’t able to get this package to
-work with my protein data, it inspired me to approach our longitudinal
+Skinner, and Thiébaut 2015). While I wasn’t able to get TcGSA to
+work with this protein expression data, the package nonetheless inspired me to approach our longitudinal
 protein expression data analysis from a similar perspective.
 
 I realized it would be tremendously helpful to have functional
